@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Evaluador Bíblico</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f2f2f2; }
+.container { width: 820px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; }
+h1, h2 { text-align: center; }
+select, button, input { padding: 8px; margin: 5px; }
+#pregunta { font-size: 18px; margin: 20px 0; }
+#feedback { margin-top: 10px; font-weight: bold; }
+.correcto { color: green; }
+.incorrecto { color: red; }
+.botones { text-align: center; margin-top: 15px; }
+#progreso { text-align: center; color: #555; }
+pre { white-space: pre-line; }
+.lista-errores { margin-top: 10px; }
+.error-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+.error-text { flex: 1; }
+.error-answer { margin-left: 10px; color: #333; font-weight: bold; }
+.small-note { font-size: 13px; color: #666; text-align: center; margin-top: 8px; }
+.source-label { font-weight: bold; color: #333; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+    <h1>Evaluador Bíblico</h1>
+
+    <div id="menu">
+        <h2>Selecciona una categoría</h2>
+        <select id="categoria">
+            <option value="">-- Elegir --</option>
+            <option value="soy">QUIÉN SOY</option>
+            <option value="dijo">QUIÉN DIJO</option>
+            <option value="generales">PREGUNTAS GENERALES</option>
+            <option value="libros">LIBROS DE LA BIBLIA</option>
+            <option value="visiones">VISIONES Y DISCIPULADO</option>
+        </select>
+        <br>
+        <button onclick="iniciar()">Empezar</button>
+        <div class="small-note">Pulsa Enter para verificar la respuesta desde el campo de texto.</div>
+    </div>
+</div>
+
+<script>
+// ======================
+// DATOS (completos según lo provisto)
+// ======================
+
+const quienSoy = [
+{p:"Con la quijada de un asno di muerte a mil hombres.",r:"Samsón"},
+{p:"Mi abuela me quería matar.",r:"Joás"},
+{p:"Una canasta se convirtió en una pequeña barca para mi.",r:"Moisés"},
+{p:"Escondí 200 siclos de plata, 50 siclos de oro y un manto babilónico.",r:"Acán"},
+{p:"No había hombre en Israel tan alabado por su hermosura como yo.",r:"Absalón"},
+{p:"Contraté a un profeta para maldecir a Israel.",r:"Balac"},
+{p:"Mi esposa se llamaba Abigail y me salvó de David.",r:"Nabal"},
+{p:"Se me prohibió llorar la muerte de dos de mis hijos.",r:"Aarón"},
+{p:"Rasgué mis vestidos al escuchar la lectura de la ley.",r:"Josías"},
+{p:"Fui arrojada de una ventana y los perros comieron mi carne.",r:"Jezabel"},
+{p:"Una flecha lanzada a la ventura me hirió entre las junturas de mi armadura.",r:"Acab"},
+{p:"Mi viña me costó la vida.",r:"Nabot"},
+{p:"Yo era conocido por la manera en que conducía.",r:"Jehú"},
+{p:"Propuse en mi corazón no contaminarme con la comida del rey.",r:"Daniel"},
+{p:"Armado de una lanza maté a 800 hombres.",r:"Adino"},
+{p:"Mi hermano era de los valientes de David; mató a 300 con su lanza.",r:"Joab"},
+{p:"Entré a una cisterna un día de nieve y maté a un león.",r:"Benaía"},
+{p:"Estuve en batalla hasta que mi mano quedó pegada a mi espada.",r:"Eleazar"},
+{p:"Mi sobrino fue el primer rey de Israel; mi hijo jefe del ejército.",r:"Ner"},
+{p:"Mis hijos se llamaban Joab, Abisai y Asael.",r:"Sarvia"},
+{p:"Socorrí a David y maté al filisteo Isbi-benob.",r:"Abisai"},
+{p:"Me caí de una ventana y el profeta Elías dijo que moriría.",r:"Ocozías"},
+{p:"Ordené al capitán de mi guardia que velara por Jeremías.",r:"Nabucodonosor"},
+{p:"Pasé el vado de Jaboc de noche con mis mujeres y mis hijos.",r:"Jacob"},
+{p:"Eché a los tres hijos de Anac de su tierra.",r:"Caleb"},
+{p:"De los hombros arriba era más alto que cualquiera del pueblo.",r:"Saúl"},
+{p:"Por siete tiempos tuve corazón de bestia.",r:"Nabucodonosor"},
+{p:"En el año 14 de Ezequías tomé las ciudades fortificadas de Judá.",r:"Senaquerib"},
+{p:"Pregunté: ¿Hay aún aquí algún profeta de Jehová?",r:"Josafat"},
+{p:"Para mostrar mi riqueza hice una fiesta de 180 días.",r:"Asuero"},
+{p:"En el primer año de mi reinado puse en libertad a Joaquín.",r:"Evil-merodac"},
+{p:"Fui castigado con lepra hasta el día de mi muerte.",r:"Uzías"},
+{p:"Cartas de amenaza me fueron presentadas, pero confié en Jehová.",r:"Ezequías"},
+{p:"Mandé que la casa de Jehová fuese reedificada.",r:"Ciro"},
+{p:"En el tiempo de mi vejez enfermé de los pies.",r:"Asa"},
+{p:"Ciego y encadenado fui llevado en cautiverio.",r:"Sedequías"},
+{p:"De doce partes me tocaron diez.",r:"Jeroboam"},
+{p:"Mis cuarenta hijos me dieron treinta nietos.",r:"Abdón"},
+{p:"Yo era zurdo y de la tribu de Benjamín.",r:"Aod"},
+{p:"Morí a los 98 años y juzgué a Israel por 40 años.",r:"Elí"},
+{p:"Un ángel me visitó y libré a Israel con 300 hombres.",r:"Gedeón"},
+{p:"Tuve treinta hijos y treinta hijas.",r:"Ibzán"},
+{p:"Cumplí una promesa que era en contra de la ley.",r:"Jefté"},
+{p:"Hice que el sol se detuviera por el poder de Dios.",r:"Josué"},
+{p:"Dios mismo me sepultó.",r:"Moisés"},
+{p:"Aunque no era sacerdote se me permitió hacer holocaustos.",r:"Samuel"},
+{p:"Por 20 años juzgué, pero con mi muerte más enemigos maté.",r:"Samsón"},
+{p:"Mi hermano habló por mí.",r:"Moisés"},
+{p:"Con pandero y danza dirigía a las mujeres en alabanza.",r:"miriam"},
+{p:"Con mi mejor amigo caminé cada día y Él me llevó.",r:"Enoc"},
+{p:"Tres veces traté de maldecir al pueblo de Israel.",r:"Balaam"},
+{p:"Mi vestido era de pelo de camello, comía langostas y miel.",r:"Juan el Bautista"},
+{p:"Hice descender fuego del cielo.",r:"Elías"},
+{p:"Recibí el doble de la porción del espíritu de mi maestro.",r:"Eliseo"},
+{p:"Profeticé que una espada traspasaría el corazón de María.",r:"Simeón"},
+{p:"Pude ver cómo huesos secos volvieron a tener carne.",r:"Ezequiel"},
+{p:"Destruí en el arroyo de Cisón a los profetas de Baal.",r:"Elías"}
+];
+
+const quienDijo = [
+{p:"He aquí yo habito en casa de cedro, y el arca del pacto de Jehová debajo de cortinas.",r:"David"},
+{p:"Añada Jehová a su pueblo cien veces más, rey señor mío...",r:"Joab"},
+{p:"Tómala para ti... y aun los bueyes daré para el holocausto...",r:"Ornán"},
+{p:"No, sino que efectivamente la compraré por su justo precio...",r:"David"},
+{p:"Edad tiene preguntadle a él; él hablará por sí mismo.",r:"Padres del ciego"},
+{p:"¿De quién dice el profeta esto; de sí mismo o de algún otro?",r:"El Etiope"},
+{p:"¿No os mandamos estrictamente que no enseñaseis en ese nombre?",r:"El sumo sacerdote"},
+{p:"Así atarán los judíos en Jerusalén al varón de quien es este cinto.",r:"Profeta Agabo"},
+{p:"Cuando descendiere el tribuno Lisias, acabaré de conocer vuestro asunto.",r:"Félix"},
+{p:"No, por cierto, sino vengan ellos mismos a sacarnos.",r:"Pablo"},
+{p:"Levántate derecho sobre tus pies.",r:"Pablo"},
+{p:"Si habéis juzgado que yo sea fiel al Señor, entrad en mi casa...",r:"Lidia"},
+{p:"Yo soy joven, y vosotros ancianos; Por tanto, he tenido miedo...",r:"Eliú"},
+{p:"¿Qué hacen estos débiles judíos? ¿Se les permitirá volver...?",r:"Sanbalat"},
+{p:"¿Aún retienes tu integridad? Maldice a Dios, y muérete.",r:"Esposa de Job"},
+{p:"Huyo de delante de Sarai mi señora.",r:"Agar"},
+{p:"Llegarán los días del luto de mi padre, y yo mataré a mi hermano Jacob.",r:"Esaú"},
+{p:"Yo sé que mi Redentor vive, Y al fin se levantará sobre el polvo.",r:"Job"},
+{p:"He aquí, Señor, la mitad de mis bienes doy a los pobres...",r:"Zaqueo"},
+{p:"Por poco me persuades a ser cristiano.",r:"Agripa"},
+{p:"¿Me has hallado, enemigo mío?",r:"Acab"},
+{p:"Ya que así habéis hecho, juro que me vengaré de vosotros...",r:"Samsón"},
+{p:"Estás loco, Pablo; las muchas letras te vuelven loco.",r:"Festo"},
+{p:"No sé. ¿Soy yo acaso guarda de mi hermano?",r:"Caín"},
+{p:"He aquí el pueblo de la tierra es ahora mucho, y vosotros los hacéis cesar...",r:"Faraón"},
+{p:"He aquí hoy han ofrecido su expiación... ¿sería esto grato a Jehová?",r:"Aarón"},
+{p:"¿Acaso se ha acortado la mano de Jehová? Ahora verás si se cumple...",r:"Señor"},
+{p:"Basta, no me hables más de este asunto.",r:"Señor"},
+{p:"¿Por qué nos has turbado? Túrbete Jehová en este día.",r:"Josué"},
+{p:"El que atacare a Quiriat-sefer y la tomare, yo le daré Acsa mi hija...",r:"Caleb"},
+{p:"Volveos, hijas mías; ¿para qué habéis de ir conmigo?",r:"Noemí"},
+{p:"¿Hasta cuándo estarás ebria? Digiere tu vino.",r:"Elí"},
+{p:"¡Cuán honrado ha quedado hoy el rey de Israel, descubriéndose hoy...!",r:"Mical"},
+{p:"Vive Jehová, que lo que Jehová me hablare, eso diré.",r:"Micaías"},
+{p:"Pide lo que quieras que haga por ti, antes que yo sea quitado de ti.",r:"Elías"},
+{p:"Muera yo ahora, ya que he visto tu rostro, y sé que aún vives.",r:"Jacob"},
+{p:"¿No son diez los que fueron limpiados? Y los nueve, ¿Dónde están?",r:"Jesús"},
+{p:"Señor, hiede ya, porque es de cuatro días.",r:"Marta"},
+{p:"Nuestro padre murió en el desierto, y él no estuvo en la compañía...",r:"Hijas de Zelofehad"},
+{p:"¿Cómo puede un hombre nacer siendo viejo?",r:"Nicodemo"},
+{p:"Tomadme y echadme al mar, y el mar se os aquietará.",r:"Jonás"},
+{p:"Si tocare solamente su manto, seré salva.",r:"Mujer de Flujo"},
+{p:"He aquí, no sé hablar, porque soy niño.",r:"Jeremías"},
+{p:"¿Hasta cuándo claudicaréis vosotros entre dos pensamientos?",r:"Elías"},
+{p:"Inocente soy yo de la sangre de este justo; allá vosotros.",r:"Pilato"},
+{p:"He aquí, nosotros hemos dejado nuestras posesiones y te hemos seguido.",r:"Pedro"},
+{p:"Muera yo con los filisteos.",r:"Samsón"},
+{p:"Señor, dispuesto estoy a ir contigo no sólo a la cárcel, sino también...",r:"Pedro"},
+{p:"No te hagas ningún mal, pues todos estamos aquí.",r:"Pablo"},
+{p:"Anímate y esfuérzate y manos a la obra.",r:"David"},
+{p:"...y si perezco, que perezca.",r:"Ester"},
+{p:"SALDRÁ ESTRELLA DE JACOB, y se levantará cetro de Israel...",r:"Balaam"},
+{p:"Sol, detente en Gabaón; Y tú, Luna, en el valle de Ajalón.",r:"Josué"},
+{p:"También recibimos el bien de Dios, ¿y el mal no recibiremos?",r:"Job"},
+{p:"Entonces respondí yo: Heme aquí, envíame a mí.",r:"Isaías"},
+{p:"Ahora, ya también el hacha está puesta a la raíz de los árboles...",r:"Juan el Bautista"},
+{p:"...vosotros resistís siempre al Espíritu Santo; como vuestros padres...",r:"Esteban"},
+{p:"Si crees de todo corazón, bien puedes.",r:"Felipe"},
+{p:"...a quienes entregué a Satanás, para que aprendan a no blasfemar.",r:"Pablo"},
+{p:"Tu pueblo será mi pueblo, y tu Dios mi Dios.",r:"Rut"},
+{p:"...que no es difícil al SEÑOR salvar con multitud o con poco número.",r:"Jonatán"},
+{p:"Me habéis turbado con hacerme abominable a los moradores de esta tierra...",r:"Jacob"},
+{p:"El viento de donde quiere sopla, y oyes su sonido;...",r:"Jesús"},
+{p:"María, no temas, porque has hallado gracia cerca de Dios.",r:"Angel Gabriel"},
+{p:"He aquí la sierva del Señor; hágase á mí conforme á tu palabra.",r:"María"},
+{p:"¿Así lo habíais de hacer? Mas yo me vengaré de vosotros, y después cesaré.",r:"Samsón"},
+{p:"Porque ¿quién es este filisteo incircunciso, para que deshonre a los escuadrones...?",r:"David"},
+{p:"Si yo soy varón de Dios, descienda fuego del cielo, y consúmate...",r:"Elías"},
+{p:"YO SOY el Alfa y la Omega, principio y fin, el primero y el postrero.",r:"Jesús"},
+{p:"Mi padre agravó vuestro yugo, pero yo añadiré a vuestro yugo.",r:"Roboam"}
+];
+
+const preguntasGenerales = [
+{p:"¿Cuántos tiempo tomó Salomón para construir el templo de Jerusalén?",r:"7 años"},
+{p:"¿Cuáles son los nombres de las esposas de Elcana?",r:"Ana y Penina"},
+{p:"¿Cuántos hermanos tenía David?",r:"7 hermanos"},
+{p:"¿Cuántos hijos tenía Isaí, padre de David?",r:"8 hijos"},
+{p:"¿Cuántos años tenía Joás cuando comenzó a reinar en Jerusalén?",r:"7 años"},
+{p:"¿Durante cuántos años reinó Joás en Jerusalén?",r:"40 años"},
+{p:"¿Cuántos años tenía Josías cuanto comenzó a reinar?",r:"8 años"},
+{p:"¿A quién le sacaron los ojos y lo llevaron cautivo a Babilonia?",r:"Rey Sedequías"},
+{p:"¿Cuántas veces se sumergió Naamán en el Jordán?",r:"7 veces"},
+{p:"¿Qué edad tenía David cuando comenzó a reinar en Jerusalén?",r:"30 años"},
+{p:"¿Durante cuántos años reinó David?",r:"40 años"},
+{p:"¿Cómo se llamaba la mamá de Timoteo?",r:"Eunice"},
+{p:"¿Cómo se llamaba la abuela de Timoteo?",r:"Loida"},
+{p:"¿Qué otro nombre tenía Daniel?",r:"Beltsasar"},
+{p:"¿Cuál río es conocido como 'El Gran Río ó Río Grande'?",r:"Río Éufrates"},
+{p:"¿Qué ciudad es conocida como la ciudad de Las Palmeras?",r:"Jericó"},
+{p:"¿Cuál es el nombre de la reina a quien Ester reemplazó?",r:"Vasti"},
+{p:"¿Cuál es el nombre de la esposa de Amán?",r:"Zeres"},
+{p:"¿Cuánto tiempo comieron los israelitas maná en el desierto?",r:"40 años"},
+{p:"¿Quién fue el suegro de Moisés?",r:"Jetro"},
+{p:"¿Por cuánto tiempo fue escondido Moisés cuando nació?",r:"3 meses"},
+{p:"¿Cómo se llamaba la esposa de Moisés?",r:"Séfora"},
+{p:"¿Cuáles eran las palabras grabadas en la lámina de Oro que llevaba Aarón en su frente?",r:"Santidad a el Señor"},
+{p:"¿Quién hizo un becerro de oro?",r:"Aarón"},
+{p:"¿Quién destruyo el becerro de oro que hizo Aarón?",r:"Moisés"},
+{p:"¿Cómo se llamaba el rey de Sodoma?",r:"Bera"},
+{p:"¿Cómo se llamaba el rey de Gomorra?",r:"Birsa"},
+{p:"¿Cuántos años tenía Abram cuando nació Ismael?",r:"86 años"},
+{p:"¿Cuántos años tenía Sara cuando nació Isaac?",r:"90 años"},
+{p:"¿Cuántos años tenía Abraham cuando nació Isaac?",r:"100 años"},
+{p:"¿Cómo se llamaba la segunda esposa que tuvo Abraham?",r:"Cetura"},
+{p:"¿Cuántos años tenía Isaac cuando se casó con Rebeca?",r:"40 años"},
+{p:"¿Cuál fue el nombre de la mamá de Jacob y Esaú?",r:"Rebeca"},
+{p:"¿Cuáles dos hermanas se casaron con el mismo hombre?",r:"Raquel y Lea"},
+{p:"¿Quién es la madre de todos los vivientes?",r:"Eva"},
+{p:"¿Cuántos años tenía José cuando fue vendido pos sus hermanos?",r:"17 años"},
+{p:"¿Cómo se llamaban los hijos de José?",r:"Efraín y Manasés"},
+{p:"¿Cuántos años tenía Enoc cuando le llevó Dios?",r:"365 años"},
+{p:"¿Cuántos años vivió Adám?",r:"930 años"},
+{p:"¿Cómo se llamaban los hijos de Noé?",r:"Sem, Cam y Jafet"},
+{p:"¿Cuántos años tenía Noé cuando comenzó el diluvio?",r:"600 años"},
+{p:"¿En qué lugar reposó el arca después del diluvio?",r:"Montes de Ararat"},
+{p:"¿Cuántos años vivió Noé?",r:"950 años"},
+{p:"¿Cuántos años más vivió Noé después del diluvio?",r:"350 años"},
+{p:"¿Quién fue sucesor de Judas en su oficio de apóstol?",r:"Matías"},
+{p:"¿Por qué causa murieron Ananías y Safira?",r:"Por mentir"},
+{p:"¿Qué enfermedad tenía Eneas?",r:"Era paralítico"},
+{p:"¿Cuál era el otro nombre de Dorcas?",r:"Tabita"},
+{p:"¿Cómo se llamaban los tres amigos de Job?",r:"Elifaz, Bildad y Zofar"},
+{p:"¿Cuántos espías envió Josué a Jericó?",r:"2 espías"},
+{p:"¿En cuál ciudad vivía Rahab?",r:"Jericó"},
+{p:"¿Qué otro nombre tenía Tomás?",r:"Dídimo"},
+{p:"¿Quién pidió el cuerpo de Jesús para sepultarlo?",r:"José de Arimatea"},
+{p:"¿A quién le dijo Jesús, 'No seas incrédulo'?",r:"Tomás"},
+{p:"¿Cuál es el nombre de la hija de Caleb?",r:"Acsa"},
+{p:"¿Cuál era la profetisa que gobernaba debajo de una palmera?",r:"Débora"},
+{p:"¿Cómo se llamaba la mamá de Juan el Bautista?",r:"Elisabet"},
+{p:"¿Cómo se llamaba el papá de Juan el Bautista?",r:"Zacarías"},
+{p:"¿En qué lugar fue bautizado Jesús?",r:"En el río Jordán"},
+{p:"¿Qué enfermedad tenía Bartimeo?",r:"Era ciego"},
+{p:"¿Quiénes aparecieron con Jesús en el monte de la transfiguración?",r:"Elías y Moisés"},
+{p:"¿Quién bautizó a Jesús?",r:"Juan el bautista"},
+{p:"¿Cuántos espías envió Moisés a reconocer Canaán?",r:"12 espías"},
+{p:"¿Cuando los israelitas salieron de Egipto, quiénes fueron los únicos en entrar a la tierra prometida?",r:"Caleb y Josué"},
+{p:"¿En qué lugar murió Aarón?",r:"Monte de Hor"},
+{p:"¿Cómo se llamaron los padres de Moisés?",r:"Amram y Jocabed"},
+{p:"¿Cómo se llamaban las nueras de Noemí?",r:"Orfa y Rut"},
+{p:"¿Cómo se llamaba el dueño del campo donde Rut comenzó a recoger espigas?",r:"Booz"},
+{p:"¿Cómo se llamaba el papá de David?",r:"Isaí"},
+{p:"¿Cuál de los dos hijos de Noemí se casó con Rut?",r:"Mahlón"},
+{p:"¿Cómo se llamaba el nieto de Obed?",r:"David"},
+{p:"¿Qué usó Dios para hacer a la mujer?",r:"La costilla del hombre"},
+{p:"¿Cuál es el nombre de la esposa de Aquila?",r:"Priscila"},
+{p:"¿Cuál es el nombre del papá de Samsón?",r:"Manoa"},
+{p:"¿Quién fue la bisabuela de David?",r:"Rut"},
+{p:"¿Cuántos meses de preparación especial debía tener una doncella antes de presentarse delante del rey en tiempos del rey Asuero?",r:"12 meses"},
+{p:"¿Cómo se llamaba el guarda de las mujeres en tiempos de Asuero?",r:"Hegai"},
+{p:"¿De qué nacionalidad era Agar?",r:"Egipcia"},
+{p:"¿Cómo se llamaba el esposo de Noemí?",r:"Elimelec"},
+{p:"¿Cuál es el nombre de la mujer que mató a Sísara capitán de ejercito de Jabín?",r:"Jael"},
+{p:"¿Cómo se llamaban los dos hijos de Noemí?",r:"Mahlón y Quelión"},
+{p:"¿De qué nacionalidad era Rut?",r:"Moabita"},
+{p:"¿De qué nacionalidad era el papá de Timoteo?",r:"Griego"},
+{p:"¿En qué ciudad fue apedreado Pablo?",r:"Listra"},
+{p:"¿Quién usó una piedra por almohada?",r:"Jacob"},
+{p:"¿Cuál era el dios de los filisteos?",r:"Dagón"},
+{p:"¿De qué forma murió Elí?",r:"Se desnucó"},
+{p:"¿Quién comió algo dulce que se volvió amargo inmediatamente?",r:"Juan"},
+{p:"¿Quién fue muerto por la mujer que le dio a beber leche?",r:"Sísara"},
+{p:"¿De qué nacionalidad era Eunice?",r:"Judía"},
+{p:"¿Cómo se llamaba el padre de Samuel?",r:"Elcana"},
+{p:"¿De qué tribu era Pablo?",r:"Benjamín"},
+{p:"¿Cuál era el otro nombre de Ester?",r:"Hadasa"},
+{p:"¿Cuánto tiempo anduvo Isaías desnudo y descalzo?",r:"3 años"},
+{p:"¿Qué padre e hijo fueron circuncidados el mismo día?",r:"Abraham e Ismael"},
+{p:"¿Qué profeta amonestó al rey David por su pecado?",r:"Natán"},
+{p:"¿Cómo se llamaba el padre de Lea?",r:"Labán"},
+{p:"¿Cuál fue el nombre de los hijos de Elí?",r:"Ofni y Finees"},
+{p:"¿Qué parentezco tenía Lot con Abraham?",r:"Era su sobrino"},
+{p:"¿Cómo se llamaba el papá de Isaías?",r:"Amoz"},
+{p:"¿Cuál era la profesión de Nehemías?",r:"Copero del Rey"},
+{p:"¿Cómo se llamaba el papá de Abram?",r:"Taré"},
+{p:"¿Cómo se llamaba el hijo de Jonatan que era lisiado de los pies?",r:"Mefi-boset"},
+{p:"¿Quién adoptó a Ester?",r:"Mardoqueo"}
+];
+
+const libros = [
+{orden:1, nombre:"GÉNESIS", caps:50},{orden:2, nombre:"ÉXODO", caps:40},{orden:3, nombre:"LEVÍTICO", caps:27},
+{orden:4, nombre:"NÚMEROS", caps:36},{orden:5, nombre:"DEUTERONOMIO", caps:34},{orden:6, nombre:"JOSUÉ", caps:24},
+{orden:7, nombre:"JUECES", caps:21},{orden:8, nombre:"RUT", caps:4},{orden:9, nombre:"1 SAMUEL", caps:31},
+{orden:10, nombre:"2 SAMUEL", caps:24},{orden:11, nombre:"1 REYES", caps:22},{orden:12, nombre:"2 REYES", caps:25},
+{orden:13, nombre:"1 CRÓNICAS", caps:29},{orden:14, nombre:"2 CRÓNICAS", caps:36},{orden:15, nombre:"ESDRAS", caps:10},
+{orden:16, nombre:"NEHEMÍAS", caps:13},{orden:17, nombre:"ESTER", caps:10},{orden:18, nombre:"JOB", caps:42},
+{orden:19, nombre:"SALMOS", caps:150},{orden:20, nombre:"PROVERBIOS", caps:31},{orden:21, nombre:"ECLESIASTÉS", caps:12},
+{orden:22, nombre:"CANTARES", caps:8},{orden:23, nombre:"ISAÍAS", caps:66},{orden:24, nombre:"JEREMÍAS", caps:52},
+{orden:25, nombre:"LAMENTACIONES", caps:5},{orden:26, nombre:"EZEQUIEL", caps:48},{orden:27, nombre:"DANIEL", caps:12},
+{orden:28, nombre:"OSEAS", caps:14},{orden:29, nombre:"JOEL", caps:3},{orden:30, nombre:"AMOS", caps:9},
+{orden:31, nombre:"ABDIAS", caps:1},{orden:32, nombre:"JONÁS", caps:4},{orden:33, nombre:"MIQUEAS", caps:7},
+{orden:34, nombre:"NAHUM", caps:3},{orden:35, nombre:"HABACUC", caps:3},{orden:36, nombre:"SOFONÍAS", caps:3},
+{orden:37, nombre:"HAGEO", caps:2},{orden:38, nombre:"ZACARÍAS", caps:14},{orden:39, nombre:"MALAQUÍAS", caps:4},
+{orden:40, nombre:"MATEO", caps:28},{orden:41, nombre:"MARCOS", caps:16},{orden:42, nombre:"LUCAS", caps:24},
+{orden:43, nombre:"JUAN", caps:21},{orden:44, nombre:"HECHOS", caps:28},{orden:45, nombre:"ROMANOS", caps:16},
+{orden:46, nombre:"1 CORINTIOS", caps:16},{orden:47, nombre:"2 CORINTIOS", caps:13},{orden:48, nombre:"GALATAS", caps:6},
+{orden:49, nombre:"EFESIOS", caps:6},{orden:50, nombre:"FILIPENSES", caps:4},{orden:51, nombre:"COLOSENSES", caps:4},
+{orden:52, nombre:"1 TESALONICENSES", caps:5},{orden:53, nombre:"2 TESALONICENSES", caps:3},{orden:54, nombre:"1 TIMOTEO", caps:6},
+{orden:55, nombre:"2 TIMOTEO", caps:4},{orden:56, nombre:"TITO", caps:3},{orden:57, nombre:"FILEMÓN", caps:1},
+{orden:58, nombre:"HEBREOS", caps:13},{orden:59, nombre:"SANTIAGO", caps:5},{orden:60, nombre:"1 PEDRO", caps:5},
+{orden:61, nombre:"2 PEDRO", caps:3},{orden:62, nombre:"1 JUAN", caps:5},{orden:63, nombre:"2 JUAN", caps:1},
+{orden:64, nombre:"3 JUAN", caps:1},{orden:65, nombre:"JUDAS", caps:1},{orden:66, nombre:"APOCALIPSIS", caps:22}
+];
+
+const visiones = [
+{anio:2005, lema:"Andando en la Gracia", cita:"Colosenses 2:6"},
+{anio:2006, lema:"Edificando la estructura", cita:"Efesios 2:20-21"},
+{anio:2007, lema:"Instruir, Batallar, Compartir", cita:"Nehemías 4:18"},
+{anio:2008, lema:"Únete más", cita:"Efesios 4:3"},
+{anio:2009, lema:"Creciendo firmes y constantes", cita:"1 Corintios 15:58"},
+{anio:2010, lema:"Retén la Doctrina", cita:"2 Tesalonicenses 2:15"},
+{anio:2011, lema:"Preséntate Aprobado a Dios", cita:"2 Timoteo 2:15"},
+{anio:2012, lema:"Regocíjate, que te Regocijes.", cita:"Filipenses 4:4"},
+{anio:2013, lema:"No Duermas", cita:"1 Tesalonicenses 5:6"},
+{anio:2014, lema:"Aprueba lo Mejor", cita:"Filipenses 1:10"},
+{anio:2015, lema:"Ejercítate para la piedad", cita:"1 Timoteo 4:7"},
+{anio:2016, lema:"Conquista El Reino", cita:"Hebreos 11:33"},
+{anio:2017, lema:"Sobrelleva las Cargas del Cuerpo", cita:"Gálatas 6:2"},
+{anio:2018, lema:"Deléitate en el Señor", cita:"Salmos 37:4"},
+{anio:2019, lema:"Calcula los recursos de la edificación", cita:"Lucas 14:28"},
+{anio:2020, lema:"Anímate y esfuérzate y manos a la obra", cita:"1 Crónicas 28:20"},
+{anio:2021, lema:"Hazlo todo como para el Señor", cita:"Colosenses 3:23-24"},
+{anio:2022, lema:"Guarda todo tu Ser", cita:"1 Tesalonicenses 5:23"},
+{anio:2023, lema:"Aguza tu relación en el cuerpo", cita:"Proverbios 27:17"},
+{anio:2024, lema:"Hazlo todo con orden", cita:"1 Corintios 14:40"},
+{anio:2025, lema:"Perfecciona la Santidad temiendo al Señor", cita:"2 Corintios 7:1"},
+{anio:2026, lema:"Prioriza tus afectos", cita:"Colosenses 3:2"}
+];
+
+const discipulado = [
+{orden:1, nombre:"Salvación", cita:"Romanos 10:9-10"},
+{orden:2, nombre:"Seguridad Eterna", cita:"Romanos 8:38-39"},
+{orden:3, nombre:"La Palabra de Dios", cita:"2 Timoteo 3:16-17"},
+{orden:4, nombre:"Oración", cita:"Filipenses 4:6"},
+{orden:5, nombre:"Trinidad Santa", cita:"2 Corintios 13:14"},
+{orden:6, nombre:"La batalla espiritual", cita:"Gálatas 5:16"},
+{orden:7, nombre:"La iglesia local", cita:"Efesios 4:12"},
+{orden:8, nombre:"El bautismo y la cena del Señor", cita:"1 Corintios 12:13"},
+{orden:9, nombre:"Administrando los recursos", cita:"2 Corintios 9:7"},
+{orden:10, nombre:"Evangelismo", cita:"2 Corintios 5:18"},
+{orden:11, nombre:"Prioridades bíblicas", cita:"Colosenses 3:23"},
+{orden:12, nombre:"Tribunal de Cristo", cita:"2 Corintios 5:10"}
+];
+
+// ======================
+// LÓGICA (común)
+// ======================
+let preguntas = [];
+let i = 0;
+let aciertos = 0;
+let errores = []; // guarda objetos {index, p, respuestas: [], source}
+let respondido = false;
+let practicingErrors = false;
+let totalPreguntas = 0;
+
+/*
+  Normalización:
+  - minúsculas, quitar acentos
+  - eliminar puntuación innecesaria (mantener dígitos y dos puntos para citas)
+  - eliminar artículos y conectores comunes en español
+  - colapsar espacios
+*/
+function normalizar(texto) {
+    if (texto === null || texto === undefined) return "";
+    let s = texto.toString().toLowerCase();
+    s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    // permitir letras, dígitos, dos puntos y espacios; reemplazar lo demás por espacio
+    s = s.replace(/[^a-z0-9:\sáéíóúüñ-]/g, " ");
+    // eliminar artículos y conectores comunes (palabras completas)
+    s = s.replace(/\b(el|la|los|las|un|una|unos|unas|al|del|lo|y|e|con|por|para|de)\b/g, " ");
+    s = s.replace(/\s+/g, " ").trim();
+    return s;
+}
+
+/*
+  tokensDeRespuesta:
+  - divide la respuesta en partes por separadores comunes (coma, /, ;, " y ", "&")
+  - normaliza cada parte y también añade las palabras individuales como respaldo
+  - devuelve lista única de tokens significativos
+*/
+function tokensDeRespuesta(texto) {
+    if (texto === null || texto === undefined) return [];
+    let s = texto.toString();
+    // normalizar separadores a coma
+    s = s.replace(/\s+\/\s+|\/| - | -|-\s+|;|\band\b|\by\b|\be\b|&/gi, ",");
+    // split por coma
+    const parts = s.split(",").map(p => p.trim()).filter(p => p.length > 0);
+    const tokens = [];
+    for (let part of parts) {
+        const n = normalizar(part);
+        if (!n) continue;
+        // mantener la parte completa (nombre compuesto) y también sus palabras
+        tokens.push(n);
+        n.split(/\s+/).forEach(w => {
+            if (w && !tokens.includes(w)) tokens.push(w);
+        });
+    }
+    // si no hubo separadores y la respuesta contiene " y " o " / ", ya fueron manejados; si no, también dividir por espacios
+    if (tokens.length === 0) {
+        const fallback = normalizar(s).split(/\s+/).filter(x => x.length > 0);
+        fallback.forEach(w => { if (!tokens.includes(w)) tokens.push(w); });
+    }
+    return Array.from(new Set(tokens));
+}
+
+/*
+  compararRespuestas:
+  - maneja respuestas numéricas (acepta dígitos dentro del texto)
+  - si la respuesta correcta es compuesta (varios elementos), exige que el usuario incluya todos los elementos principales, sin importar orden ni artículos
+  - ignora artículos y conectores; compara tokens normalizados
+*/
+function compararRespuestas(userRaw, respuestasCorrectas) {
+    const userNorm = normalizar(userRaw);
+    if (!userNorm) return false;
+
+    const userTokens = tokensDeRespuesta(userRaw).map(t => normalizar(t)).filter(t => t.length > 0);
+
+    for (const rc of respuestasCorrectas) {
+        const rcStr = rc === null || rc === undefined ? "" : rc.toString();
+
+        // caso numérico: comparar dígitos
+        const rcDigits = rcStr.replace(/\D+/g, "");
+        if (rcDigits && /^\d+$/.test(rcDigits)) {
+            const userDigits = userNorm.replace(/\D+/g, "");
+            if (userDigits === rcDigits) return true;
+        }
+
+        // tokenizar la respuesta correcta
+        const rcTokens = tokensDeRespuesta(rcStr).map(t => normalizar(t)).filter(t => t.length > 0);
+        if (rcTokens.length === 0) continue;
+
+        // Si la respuesta correcta es una sola unidad (ej "Samsón", "Colosenses 2:6"), aceptar coincidencia exacta o presencia en tokens
+        if (rcTokens.length === 1) {
+            const solo = rcTokens[0];
+            if (userNorm === solo) return true;
+            if (userTokens.includes(solo)) return true;
+            // también aceptar si el usuario escribió la respuesta con palabras clave incluidas
+            if (solo.split(" ").every(w => userNorm.includes(w))) return true;
+            continue;
+        }
+
+        // Si la respuesta correcta tiene múltiples elementos (ej "Ana y Penina", "Efraín y Manasés", "Sem, Cam y Jafet")
+        // debemos comprobar que el usuario incluya todos los elementos principales (sin importar orden).
+        // Determinar elementos principales: tomar cada parte separada por coma o " y " en la respuesta correcta original.
+        // tokensDeRespuesta ya devuelve partes completas y palabras; preferimos las partes completas que aparecen en rcTokens.
+        // Construir lista de "elementos esperados" a partir de rcStr separando por comas y conectores.
+        const expectedPartsRaw = rcStr.replace(/\s+\/\s+|\/| - | -|-\s+|;|&/g, ",").split(",").map(s => s.trim()).filter(s => s.length > 0);
+        const expectedParts = expectedPartsRaw.map(p => normalizar(p)).filter(p => p.length > 0);
+
+        // Si no se detectaron partes por coma, intentar separar por " y "
+        if (expectedParts.length === 0) {
+            const byY = rcStr.split(/\by\b/i).map(s => s.trim()).filter(s => s.length > 0);
+            expectedParts.push(...byY.map(p => normalizar(p)).filter(p => p.length > 0));
+        }
+
+        // Si aún no hay partes, usar rcTokens como fallback
+        const principales = expectedParts.length > 0 ? expectedParts : rcTokens;
+
+        // Comprobar que cada elemento principal esté presente en la respuesta del usuario (como token completo o como conjunto de palabras)
+        let todosPresentes = true;
+        for (const esperado of principales) {
+            if (!esperado) { todosPresentes = false; break; }
+            // buscar coincidencia exacta en userTokens
+            const encontrado = userTokens.some(ut => ut === esperado);
+            if (encontrado) continue;
+            // si no exacto, comprobar que todas las palabras de 'esperado' estén en userNorm
+            const palabras = esperado.split(/\s+/).filter(x => x.length > 0);
+            const todasPalabras = palabras.every(pk => userNorm.includes(pk));
+            if (todasPalabras) continue;
+            // si no encontrado, marcar como faltante
+            todosPresentes = false;
+            break;
+        }
+        if (todosPresentes) return true;
+
+        // adicional: si rc contiene varios nombres y el usuario escribió exactamente esos nombres en distinto orden,
+        // tokensDeRespuesta + comparación de conjuntos ya cubre ese caso; si no, intentar comparar conjuntos de palabras clave
+        const palabrasClave = principales.flatMap(p => p.split(/\s+/)).filter(x => x.length > 0);
+        const todasPalabrasPresentes = palabrasClave.every(pk => userNorm.includes(pk));
+        if (todasPalabrasPresentes) return true;
+    }
+
+    return false;
+}
+
+// ======================
+// Flujo del cuestionario
+// ======================
+function iniciar(useErrorsOnly = false) {
+    const categoriaEl = document.getElementById("categoria");
+    const c = categoriaEl ? categoriaEl.value : "";
+    if (!c && !useErrorsOnly) return alert("Selecciona una categoría");
+
+    if (useErrorsOnly && errores.length === 0) return alert("No hay errores para practicar");
+
+    if (useErrorsOnly) {
+        preguntas = errores.map(e => ({p: e.p, respuestas: e.respuestas, source: e.source}));
+        practicingErrors = true;
+    } else {
+        errores = [];
+        practicingErrors = false;
+
+        if (c === "soy") {
+            preguntas = [...quienSoy].map(q => ({p: q.p, respuestas: [q.r], source: "QUIÉN SOY"}));
+        } else if (c === "dijo") {
+            preguntas = [...quienDijo].map(q => ({p: q.p, respuestas: [q.r], source: "QUIÉN DIJO"}));
+        } else if (c === "generales") {
+            preguntas = [...preguntasGenerales].map(q => ({p: q.p, respuestas: [q.r], source: "PREGUNTAS GENERALES"}));
+        } else if (c === "libros") {
+            preguntas = libros.map(lib => {
+                const tipo = Math.random() < 0.5 ? "caps" : "orden";
+                if (tipo === "caps") {
+                    return { p: `LIBROS: ¿Cuántos capítulos tiene el libro de ${lib.nombre}?`, respuestas: [String(lib.caps)], source: "LIBROS DE LA BIBLIA" };
+                } else {
+                    return { p: `LIBROS: ¿Qué número de libro es ${lib.nombre}?`, respuestas: [String(lib.orden)], source: "LIBROS DE LA BIBLIA" };
+                }
+            });
+        } else if (c === "visiones") {
+            const pool = [];
+
+            visiones.forEach(v => {
+                // año -> pedir lema o cita (solo una)
+                if (Math.random() < 0.5) {
+                    pool.push({ source: "VISIÓN", prompt: `VISIÓN: Para el año ${v.anio}, escribe el lema.`, respuestas: [v.lema] });
+                } else {
+                    pool.push({ source: "VISIÓN", prompt: `VISIÓN: Para el año ${v.anio}, escribe la cita bíblica.`, respuestas: [v.cita] });
+                }
+                // lema -> pedir año o cita (solo una)
+                if (Math.random() < 0.5) {
+                    pool.push({ source: "VISIÓN", prompt: `VISIÓN: Para el lema "${v.lema}", escribe el año.`, respuestas: [String(v.anio)] });
+                } else {
+                    pool.push({ source: "VISIÓN", prompt: `VISIÓN: Para el lema "${v.lema}", escribe la cita bíblica.`, respuestas: [v.cita] });
+                }
+                // cita -> pedir año o lema (solo una)
+                if (Math.random() < 0.5) {
+                    pool.push({ source: "VISIÓN", prompt: `VISIÓN: Para la cita ${v.cita}, escribe el año.`, respuestas: [String(v.anio)] });
+                } else {
+                    pool.push({ source: "VISIÓN", prompt: `VISIÓN: Para la cita ${v.cita}, escribe el lema.`, respuestas: [v.lema] });
+                }
+            });
+
+            discipulado.forEach(d => {
+                // orden -> pedir nombre o cita (solo una)
+                if (Math.random() < 0.5) {
+                    pool.push({ source: "DISCIPULADO", prompt: `DISCIPULADO: Para el número ${d.orden}, escribe la lección.`, respuestas: [d.nombre] });
+                } else {
+                    pool.push({ source: "DISCIPULADO", prompt: `DISCIPULADO: Para el número ${d.orden}, escribe la cita bíblica.`, respuestas: [d.cita] });
+                }
+                // nombre -> pedir orden o cita (solo una)
+                if (Math.random() < 0.5) {
+                    pool.push({ source: "DISCIPULADO", prompt: `DISCIPULADO: Para la lección "${d.nombre}", escribe el número.`, respuestas: [String(d.orden)] });
+                } else {
+                    pool.push({ source: "DISCIPULADO", prompt: `DISCIPULADO: Para la lección "${d.nombre}", escribe la cita bíblica.`, respuestas: [d.cita] });
+                }
+                // cita -> pedir orden o nombre (solo una)
+                if (Math.random() < 0.5) {
+                    pool.push({ source: "DISCIPULADO", prompt: `DISCIPULADO: Para la cita ${d.cita}, escribe el número.`, respuestas: [String(d.orden)] });
+                } else {
+                    pool.push({ source: "DISCIPULADO", prompt: `DISCIPULADO: Para la cita ${d.cita}, escribe la lección.`, respuestas: [d.nombre] });
+                }
+            });
+
+            shuffleArray(pool);
+            preguntas = pool.slice(0, 25).map(item => ({ p: item.prompt, respuestas: item.respuestas, source: item.source }));
+        } else {
+            preguntas = [];
+        }
+    }
+
+    // mezclar preguntas (las demás categorías mantienen su total completo)
+    shuffleArray(preguntas);
+
+    if (preguntas.length === 0) return alert("No hay preguntas para esa categoría");
+
+    i = 0;
+    aciertos = 0;
+    respondido = false;
+    totalPreguntas = preguntas.length;
+
+    renderQuizUI();
+    mostrar();
+}
+
+function renderQuizUI() {
+    document.getElementById("app").innerHTML = `
+        <h2 id="progreso"></h2>
+        <div id="pregunta"></div>
+
+        <input type="text" id="respuestaUsuario" placeholder="Escribe tu respuesta aquí" style="width:95%;">
+
+        <div id="feedback"></div>
+
+        <div class="botones">
+            <button onclick="verificar()">Verificar</button>
+            <button onclick="siguiente()">Siguiente</button>
+        </div>
+    `;
+    const input = document.getElementById("respuestaUsuario");
+    input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            verificar();
+        }
+    });
+}
+
+function mostrar() {
+    respondido = false;
+    const feedback = document.getElementById("feedback");
+    const input = document.getElementById("respuestaUsuario");
+    if (!feedback || !input) return;
+    feedback.innerHTML = "";
+    feedback.className = "";
+    input.value = "";
+    input.disabled = false;
+    input.focus();
+
+    document.getElementById("progreso").innerText = `Pregunta ${i + 1} de ${preguntas.length}`;
+    document.getElementById("pregunta").innerText = preguntas[i].p;
+}
+
+function verificar() {
+    if (respondido) return;
+
+    const inputEl = document.getElementById("respuestaUsuario");
+    if (!inputEl) return;
+    const userRaw = inputEl.value;
+    const feedback = document.getElementById("feedback");
+
+    inputEl.disabled = true;
+    respondido = true;
+
+    const esCorrecto = compararRespuestas(userRaw, preguntas[i].respuestas);
+
+    if (esCorrecto) {
+        aciertos++;
+        feedback.innerHTML = "✔ Correcto";
+        feedback.className = "correcto";
+    } else {
+        errores.push({ index: i, p: preguntas[i].p, respuestas: preguntas[i].respuestas, source: preguntas[i].source || "" });
+        feedback.innerHTML = `✘ Incorrecto<br>Respuesta correcta: ${preguntas[i].respuestas.join(" / ")}`;
+        feedback.className = "incorrecto";
+    }
+}
+
+function siguiente() {
+    if (!respondido) return alert("Primero verifica la respuesta");
+
+    i++;
+    if (i >= preguntas.length) finalizar();
+    else mostrar();
+}
+
+function finalizar() {
+    const porcentaje = totalPreguntas > 0 ? ((aciertos / totalPreguntas) * 100) : 0;
+    const porcentajeFormateado = Math.round(porcentaje * 10) / 10;
+
+    const erroresHtml = errores.length === 0 ? "<p>No fallaste ninguna pregunta. ¡Bien hecho!</p>" : `
+        <div class="lista-errores">
+            ${errores.map((e, idx) => `
+                <div class="error-item">
+                    <div class="error-text"><span class="source-label">${e.source}</span>${idx + 1}. ${e.p}</div>
+                    <div class="error-answer">${e.respuestas.join(" / ")}</div>
+                </div>
+            `).join("")}
+        </div>
+    `;
+
+    const practicarBtn = errores.length > 0 ? `<button id="practicarBtn">Practicar errores</button>` : "";
+
+    document.getElementById("app").innerHTML = `
+        <h2>Resultado final</h2>
+        <p><strong>Aciertos:</strong> ${aciertos} / ${totalPreguntas}</p>
+        <p><strong>Porcentaje de aciertos:</strong> ${porcentajeFormateado}%</p>
+        <p><strong>Errores:</strong> ${errores.length}</p>
+        ${erroresHtml}
+        <div style="text-align:center; margin-top:12px;">
+            <button onclick="reiniciar()">Volver al menú</button>
+            ${practicarBtn}
+        </div>
+    `;
+
+    if (errores.length > 0) {
+        const btn = document.getElementById("practicarBtn");
+        btn.addEventListener("click", function() {
+            const erroresParaPracticar = errores.map(e => ({p: e.p, respuestas: e.respuestas, source: e.source}));
+            preguntas = erroresParaPracticar;
+            i = 0;
+            aciertos = 0;
+            totalPreguntas = preguntas.length;
+            errores = [];
+            respondido = false;
+            practicingErrors = true;
+
+            renderQuizUI();
+            mostrar();
+        });
+    }
+}
+
+function reiniciar() {
+    preguntas = [];
+    i = 0;
+    aciertos = 0;
+    errores = [];
+    respondido = false;
+    practicingErrors = false;
+    totalPreguntas = 0;
+
+    document.getElementById("app").innerHTML = `
+        <h1>Evaluador Bíblico</h1>
+        <div id="menu">
+            <h2>Selecciona una categoría</h2>
+            <select id="categoria">
+                <option value="">-- Elegir --</option>
+                <option value="soy">QUIÉN SOY</option>
+                <option value="dijo">QUIÉN DIJO</option>
+                <option value="generales">PREGUNTAS GENERALES</option>
+                <option value="libros">LIBROS DE LA BIBLIA</option>
+                <option value="visiones">VISIONES Y DISCIPULADO</option>
+            </select>
+            <br>
+            <button onclick="iniciar()">Empezar</button>
+            <div class="small-note">Pulsa Enter para verificar la respuesta desde el campo de texto.</div>
+        </div>
+    `;
+}
+
+// Utilidades
+function shuffleArray(arr) {
+    for (let j, x, i = arr.length; i; j = Math.floor(Math.random() * i), x = arr[--i], arr[i] = arr[j], arr[j] = x);
+    return arr;
+}
+</script>
+</body>
+</html>
